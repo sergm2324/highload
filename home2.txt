@@ -1,0 +1,46 @@
+sudo yum install mariadb
+sudo yum install mariadb-server
+sudo systemctl start mariadb
+mysql_secure_installation
+sudo systemctl enable mariadb.service
+sudo systemctl enable nginx.service
+
+sudo yum install composer
+
+php72 -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php72 composer-setup.php
+php72 -r "unlink('composer-setup.php');"
+sudo mv composer.phar /usr/bin/composer
+sudo chmod 755 /usr/bin/composer
+sudo yum install zip unzip
+
+php72 composer require monolog/monolog
+sudo yum install coreutils
+
+Правим index.php
+<?php
+require_once('/usr/bin/vendor/autoload.php');
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+// create a log channel
+$log = new Logger('name');
+$log->pushHandler(new StreamHandler('/usr/share/nginx/html/log/my.log', Logger::WARNING));
+// add records to the log
+$log->warning('Foo');
+$log->error('Bar');
+
+sudo find /usr/ -name my.log
+
+nano my.log:
+[2019-11-24T09:54:50.329319+00:00] name.WARNING: Foo [] []
+[2019-11-24T09:54:50.329611+00:00] name.ERROR: Bar [] []
+[2019-11-24T09:55:01.743218+00:00] name.WARNING: Foo [] []
+[2019-11-24T09:55:01.743418+00:00] name.ERROR: Bar [] []
+
+
+sudo yum install php72-php-pecl-xdebug
+sudo systemctl restart nginx;
+
+Добавляем строчки в index.php:
+error_reporting(E_ALL);
+ini_set('display_errors',1);
