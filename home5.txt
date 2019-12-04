@@ -1,0 +1,70 @@
+sudo yum install memcached php72 - php-pecl-memcached
+sudo service php-fpm restart
+sudo netstat -nap | grep memcached
+php-fpm —m | grep memcached
+
+Вставляем код в index.php:
+// создаем инстанс
+$m = new Memcached ();
+// подключаемся к серверу
+$m -> addServer ( 'localhost' , 11211 );
+// добавляем переменные в кеш
+// первое значение — имя ключа, второе - значение
+$m -> set ( 'int' , 99 );
+$m -> set ( 'string' , 'a simple string' );
+$m -> set ( 'array' , array ( 11 , 12 ));
+// здесь указываем время хранения записи с ключом 'object' - 5 минут
+$m -> set ( 'object' , new stdclass , time () + 300 );
+// теперь можем вытаскивать значения прямо из кеша
+var_dump ( $m -> get ( 'int' ));
+var_dump ( $m -> get ( 'string' ));
+var_dump ( $m -> get ( 'array' ));
+var_dump ( $m -> get ( 'object' ));
+
+sudo yum install redis - server php72-php-pecl-redis
+sudo service redis - server start
+sudo service php - fpm restart
+
+class redisCacheProvider {
+private $connection = null;
+private function getConnection (){
+if ( $this -> connection === null ){
+$this -> connection = new Redis ();
+$this -> connection -> connect ( REDIS_SERVER , REDIS_PORT );
+}
+return $this -> connection;
+}
+public function get ( $key ){
+$result = false;
+if ( $c = $this -> getConnection ()){
+$result = unserialize ( $c -> get ( $key ));
+}
+return $result;
+}
+public function set ( $key , $value , $time = 0 ){
+if ( $c = $this -> getConnection ()){
+$c -> set ( $key , serialize ( $value ), $time );
+}
+}
+public function del ( $key ){
+if ( $c = $this -> getConnection ()){
+$c -> delete ( $key );
+}
+}
+public function clear (){
+if ( $c = $this -> getConnection ()){
+$c -> flushDB ();
+}
+добавляем в настройку сервера директивы:
+server {
+location / {
+set $memcached_key "$uri?$args";
+memcached_pass host : 11211;
+error_page 404 502 504 = @fallback;
+}
+location @fallback {
+proxy_pass http : //backend;
+}
+}
+
+
