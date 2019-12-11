@@ -1,0 +1,35 @@
+На обеих виртуальных машинах (вторую создаем клонированием первой):
+
+в файле conf.d меняем на listen 8080
+добавляем настройки:
+
+upstream backend {
+server backend1.mysite.com:8080;
+server backend2.mysite.com:8080;
+}
+
+server {
+listen 80;
+server_name mysite.local;
+location / {
+proxy_pass http://backend;
+}
+}
+
+service nginx restart
+
+Для балансировки используем Round Robin (метод по умолчанию).
+
+Чтобы сессии хранились в Memcached, отредактируем php.ini :
+session . save_handler = memcache
+session . save_path = "tcp://path.to.memcached.server:port"
+
+Настраиваем NGINX для работы с символьной ссылкой:
+
+ln —s /var/www/mysite.local production
+
+После залития обновления в другую папку, просто переключаем на нее символьную ссылку:
+ln —s /var/www/mysite.local.new production
+
+
+
