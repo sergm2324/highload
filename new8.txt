@@ -1,0 +1,53 @@
+sudo rpm -ivh
+https://repo.zabbix.com/zabbix/4.0/rhel/7/x86_64/zabbix-release-4.0-1.el7.noarch .rpm
+sudo yum-config-manager --enable rhel-7-server-optional-rpms
+
+sudo yum install zabbix-server-mysql zabbix-web-mysql
+zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -uzabbix -p zabbix
+
+в файле /etc/zabbix/zabbix_server.conf:
+DBHost = localhost
+DBName = zabbix
+DBUser = zabbix
+DBPassword = zabbix_user_password
+
+создадим новый файл конфигурации nginx под названием zabbix.local:
+
+server {
+listen 80;
+root/usr/share/zabbix;
+access_log/var/log/nginx/zabbix.access.log;
+server_name zabbix.local;
+location / {
+index.php index.html index.htm;
+}
+location ~ \.php$ {
+fastcgi_pass unix : /var/run/php5 -fpm.sock;
+fastcgi_index index .php;
+fastcgi_param SCRIPT_FILENAME
+$document_root$fastcgi_script_name;
+include fastcgi_params;
+fastcgi_param PHP_VALUE "
+max_execution_time = 300
+memory_limit = 128M
+post_max_size = 16M
+upload_max_filesize = 2M
+max_input_time = 300
+date.timezone = Europe / Moscow
+always_populate_raw_post_data = - 1 ";
+fastcgi_buffers 8 256k;
+fastcgi_buffer_size 128k;
+fastcgi_intercept_errors on;
+fastcgi_busy_buffers_size 256k;
+fastcgi_temp_file_write_size 256k;
+}
+}
+
+sudo chown - R www - data / etc / zabbix / web
+sudo chown - R www - data / usr / share / zabbix
+
+Перезапустим nginx
+
+sudo yum install zabbix - agent
+
+
