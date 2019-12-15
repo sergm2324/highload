@@ -1,0 +1,109 @@
+# этой командой позволяем вызывать PHP 7.1 через простую команду php
+# иначе не будет корректно работать Composer
+sudo ln -s php71 php
+
+# ставим composer
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php composer-setup.php
+php -r "unlink('composer-setup.php');"
+mv composer.phar /usr/bin/composer
+
+composer require cboden/ratchet
+
+<?php
+namespace MyApp;
+use Ratchet\MessageComponentInterface;
+use Ratchet\ConnectionInterface;
+class Chat implements MessageComponentInterface {
+protected $clients;
+public function __construct() {
+$this->clients = new \SplObjectStorage;
+}
+public function onOpen(ConnectionInterface $conn) {
+
+// Store the new connection to send messages to later
+$this->clients->attach($conn);
+echo "New connection! ({$conn->resourceId})\n";
+}
+
+public function onMessage(ConnectionInterface $from, $msg) {
+$numRecv = count($this->clients) - 1;
+echo sprintf('Connection %d sending message "%s" to %d other
+connection%s' . "\n"
+, $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');
+foreach ($this->clients as $client) {
+if ($from !== $client) {
+// The sender is not the receiver, send to each client connected
+$client->send($msg);
+}
+}
+}
+public function onClose(ConnectionInterface $conn) {
+// The connection is closed, remove it, as we can no longer send it
+messages
+$this->clients->detach($conn);
+echo "Connection {$conn->resourceId} has disconnected\n";
+}
+public function onError(ConnectionInterface $conn, \Exception $e) {
+echo "An error has occurred: {$e->getMessage()}\n";
+$conn->close();
+}
+}
+<?php
+
+// server.php
+use Ratchet\Server\IoServer;
+use MyApp\Chat;
+require 'vendor/autoload.php';
+require 'chat.php';
+$server = IoServer::factory(
+new Chat(),
+8181
+);
+$server->run();
+
+telnet 127.0.0.1 8181
+hello
+
+Connection 45 sending message "hello" to 0 other connections
+
+nohup php /var/www/mysite.local/index.php &
+
+sudo yum install rabbitmq - server
+sudo rabbitmq - plugins enable rabbitmq_management
+sudo service rabbitmq - server restart
+yum install php71-php-pecl-amq
+"require" : {
+...,
+"php-amqplib/php-amqplib" : "2.6.*"
+}
+
+Скрипт обработки формы будет выглядеть примерно так:
+<? php
+require_once ( 'vendor/autoload.php' );
+use PhpAmqpLib \Connection\A MQPStreamConnection;
+use PhpAmqpLib \Exception\A MQPProtocolChannelException;
+use PhpAmqpLib \Message\A MQPMessage;
+try {
+// соединяемся с RabbitMQ
+$connection = new AMQPStreamConnection ( 'localhost' , 5672 , 'guest' , 'guest' );
+// Создаем канал общения с очередью
+$channel = $connection -> channel ();
+$channel -> queue_declare ( 'Coffee' , false , true , false , false );
+// создаем сообщение
+$msg = new AMQPMessage ( $_POST [ 'type' ]);
+// размещаем сообщение в очереди
+$channel -> basic_publish ( $msg , '' , 'Coffee' );
+// закрываем соединения
+$channel -> close ();
+$connection -> close ();
+}
+catch ( AMQPProtocolChannelException $e ){
+echo $e -> getMessage ();
+}
+catch ( AMQPException $e ){
+echo $e -> getMessage ();
+}
+
+
+
